@@ -43,6 +43,6 @@ TEST_DATA = [
 )
 def test_filterbank_graph_size(height, width, max_y_axis, filterbank, expected, raises):
     with raises:
-        bar_graph = fbg.filterbank_bar_graph(width, height, max_y_axis, filterbank)
+        bar_graph = fbg.one_channel(width, height, max_y_axis, filterbank)
 
         assert bar_graph.shape == expected

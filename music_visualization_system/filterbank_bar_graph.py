@@ -9,7 +9,7 @@ def _reshape_filterbank(filterbank: np.ndarray, width: int) -> np.ndarray:
     return reshaped_filterbank
 
 
-def filterbank_bar_graph(
+def one_channel(
     width: int, height: int, max_y_axis: int, filterbank: np.ndarray
 ) -> np.ndarray:
     """ Turn each bin of a filterbank into a bar graph
