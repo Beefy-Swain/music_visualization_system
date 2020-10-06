@@ -13,8 +13,8 @@ import numpy as np  # type:ignore
 import psutil  # type:ignore
 import typer
 
+import music_visualization_system.filterbank_bar_graph as fbg
 import pymvf
-from music_visualization_system.filterbank_bar_graph import filterbank_bar_graph
 
 
 @atexit.register
@@ -63,9 +63,7 @@ def main(
             (buffer.left_channel_filterbank / 2) + (buffer.right_channel_filterbank / 2)
         ).astype(np.uint32)
 
-        frame = filterbank_bar_graph(
-            width, height, max_energy, average_filterbank[2:-5]
-        )
+        frame = fbg.one_channel(width, height, max_energy, average_filterbank[2:-5])
         pickled_frame = pickle.dumps(frame)
 
         # https://stackoverflow.com/a/60067126/1342874
