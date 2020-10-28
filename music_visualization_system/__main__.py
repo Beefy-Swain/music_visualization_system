@@ -18,17 +18,19 @@ import music_visualization_system.led_wall_bar_graph as bar_graph
 import pymvf
 
 LOGGER = logging.getLogger(__name__)
-print
 
 
 @atexit.register
 def _killtree(including_parent=True):
+    LOGGER.critical("Stopping")
     parent = psutil.Process(os.getpid())
     for child in parent.children(recursive=True):
         child.kill()
 
     if including_parent:
         parent.kill()
+
+    LOGGER.critical("Stopped")
 
 
 def main(
@@ -47,13 +49,10 @@ def main(
     led_wall_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     led_wall_connection.connect((server_address, server_port))
 
-    # pymvf.signal_processing.generate_bin_edges(40, 20_000, 20)
-    pymvf_queue: mp.Queue = mp.Queue()
-    pymvf_process = pymvf.Process(
-        target=pymvf.PyMVF,
-        args=(pymvf.signal_processing.generate_bin_edges(20, 16_000, 24), pymvf_queue,),
+    buffer_discard_qty = 10
+    buffer_processor = pymvf.PyMVF(
+        bin_edges=pymvf.dsp.generate_bin_edges(20, 16000, 24), buffer_discard_qty=10,
     )
-    pymvf_process.start()
 
     logarithmic_constant = 0.8
     # this prevents the max energy from "running away"
@@ -63,10 +62,10 @@ def main(
     buffers_since_last_max_energy = 0
     while True:
         start = time.monotonic()
-        buffer = pymvf_queue.get()
+        buffer = buffer_processor()
 
-        left_bin_rms_array = np.array(list(buffer.left_bin_rms.values()))
-        right_bin_rms_array = np.array(list(buffer.right_bin_rms.values()))
+        left_bin_rms_array = np.array(list(buffer.left_bin_energy_mapping.values()))
+        right_bin_rms_array = np.array(list(buffer.right_bin_energy_mapping.values()))
 
         current_max_energy = float(
             np.amax(np.concatenate((left_bin_rms_array, right_bin_rms_array)))
