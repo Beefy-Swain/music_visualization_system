@@ -2,7 +2,7 @@
 This program is used to visualize live music for the Caverage LED wall.
 
 ## Setup
-This project requires Python >=3.7, Linux, and PortAudio.
+This project requires Python >=3.8, Linux, and PortAudio.
 
 In addition it requires:
   * https://github.com/caverage/led_wall_driver_software
