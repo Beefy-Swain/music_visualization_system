@@ -23,15 +23,12 @@ def _reshape_bin_rms_array(bin_rms_array: np.ndarray, width: int) -> np.ndarray:
     return reshaped_bin_rms_array
 
 
-def one_channel(
-    width: int, height: int, max_y_axis: float, bin_rms_array: np.ndarray
-) -> np.ndarray:
+def one_channel(width: int, height: int, bin_rms_array: np.ndarray) -> np.ndarray:
     """ Turn each bin of a bin_rms_array into a bar graph
 
     Args:
         width: width of LED Wall in pixels
         height: height of LED Wall in pixels
-        max_y_axis: maximum of Y axis for graphing
         bin_rms_array: array of bin energies
 
     Returns:
@@ -75,7 +72,7 @@ def one_channel(
         if not energy:
             bar_height = 0
         else:
-            bar_height = int((energy / max_y_axis) * height)
+            bar_height = int(energy * height)
 
         bar_graph[0:bar_height, i, :] = full_bar[0:bar_height, :]
 
@@ -83,11 +80,7 @@ def one_channel(
 
 
 def centered_two_channel(
-    width: int,
-    height: int,
-    max_y_axis: float,
-    left_channel: np.ndarray,
-    right_channel: np.ndarray,
+    width: int, height: int, left_channel: np.ndarray, right_channel: np.ndarray,
 ) -> np.ndarray:
     # odd
     if width % 2:
@@ -96,13 +89,11 @@ def centered_two_channel(
     else:
         each_channel_width = int(width / 2)
 
-    left_graph = one_channel(int(each_channel_width), height, max_y_axis, left_channel)
-    right_graph = one_channel(
-        int(each_channel_width), height, max_y_axis, right_channel
-    )
+    left_graph = one_channel(int(each_channel_width), height, left_channel)
+    right_graph = one_channel(int(each_channel_width), height, right_channel)
 
     left_graph = np.fliplr(left_graph)
-    frame = np.concatenate((right_graph, left_graph), axis=1)
+    frame = np.concatenate((left_graph, right_graph), axis=1)
 
     return frame
 
@@ -149,45 +140,38 @@ class LEDWall:
     def _main(self) -> None:
         # each bin energy meter is more logarithmic as this approaches zero
         logarithmic_constant = 0.8
+        # allows bins to "clip" over the top of the graph for dramatic effect
         max_energy_gate_constant = 0.9
 
         next_frame_time = None
-
-        max_bin_energies = {bin_: None for bin_ in self._bins}
         frames = []
+
         LOGGER.info("Initialized LEDWall Process")
         while True:
             try:
-                max_energy, buffer = self._input_queue.get(block=False)
-                max_energy = max_energy * max_energy_gate_constant
+                buffer = self._input_queue.get(block=False)
 
                 if next_frame_time is None:
                     next_frame_time = buffer.timestamp + self._delay
 
-                left_bin_energy_array = np.array(
-                    list(buffer.left_bin_energy_mapping.values())
+                left_bin_intensities = np.array(
+                    np.array(list(buffer.left_bin_intensity_mapping.values()))
                 )
-                right_bin_energy_array = np.array(
-                    list(buffer.right_bin_energy_mapping.values())
+                right_bin_intensities = np.array(
+                    np.array(list(buffer.left_bin_intensity_mapping.values()))
                 )
 
-                # logarithmic scaling bin energies to compensate for the way humans hear
-                for energy_array in [left_bin_energy_array, right_bin_energy_array]:
-                    for i, energy in enumerate(energy_array):
-                        energy_array[i] = energy * (1 + i) ** 0.5
-
-                left_bin_log_energy_array = np.power(
-                    left_bin_energy_array, logarithmic_constant
+                left_bin_log_intensity_array = np.power(
+                    left_bin_intensities, logarithmic_constant
                 )
-                right_bin_log_energy_array = np.power(
-                    right_bin_energy_array, logarithmic_constant
+                right_bin_log_intensity_array = np.power(
+                    right_bin_intensities, logarithmic_constant
                 )
                 frame = centered_two_channel(
                     self._width,
                     self._height,
-                    max_energy,
-                    left_bin_log_energy_array,
-                    right_bin_log_energy_array,
+                    left_bin_log_intensity_array,
+                    right_bin_log_intensity_array,
                 )
                 frames.append(frame)
 
