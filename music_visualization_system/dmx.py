@@ -9,12 +9,7 @@ import numpy as np  # type:ignore
 
 
 class ESPDMX:
-    def __init__(self, host: str, port: int, name: Optional[str] = None):
-        if name is not None:
-            self.name = name
-        else:
-            self.name = host
-
+    def __init__(self, host: str, port: int):
         self._connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._connection.connect((host, port))
 

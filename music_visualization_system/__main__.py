@@ -11,7 +11,9 @@ import typer
 import music_visualization_system as mvs
 import pymvf
 
-from . import led_wall_bar_graph as led
+from . import dmx
+from .visualizations import ghosts
+from .visualizations import led_wall_bar_graph as led
 
 logging.basicConfig(filename="mvs.log", level=20)
 LOGGER = logging.getLogger(__name__)
