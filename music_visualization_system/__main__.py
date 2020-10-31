@@ -11,9 +11,7 @@ import typer
 import music_visualization_system as mvs
 import pymvf
 
-from . import dmx
-from .visualizations import ghosts
-from .visualizations import led_wall_bar_graph as led
+from . import dmx, visualizations
 
 logging.basicConfig(filename="mvs.log", level=20)
 LOGGER = logging.getLogger(__name__)
@@ -53,19 +51,17 @@ def main(
         bin_edges=bin_edges, buffer_discard_qty=buffer_discard_qty,
     )
 
-    led_wall = led.LEDWall(
+    led_wall = visualizations.led_wall_bar_graph.LEDWall(
         led_wall_server, width, height, delay, bins, mvs.TIME_PER_BUFFER
     )
+
+    # spider_3x3 = visualizations.spider_3x3.Spider3X3(delay)
 
     while True:
         buffer = buffer_processor()
 
-        # left_bin_energy_array = np.array(list(buffer.left_bin_energy_mapping.values()))
-        # right_bin_energy_array = np.array(
-        #     np.array(buffer.right_bin_energy_mapping.values())
-        # )
-
         led_wall(buffer)
+        # spider_3x3(buffer.timestamp, buffer.mono_intensity)
 
 
 if __name__ == "__main__":
